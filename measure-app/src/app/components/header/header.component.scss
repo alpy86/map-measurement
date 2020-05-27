@@ -1,0 +1,15 @@
+@import "_variables";
+
+:host {
+  width: 100%;
+}
+
+.header {
+  padding: 1%;
+  font-family: $font-family;
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+  border-bottom: 2px solid darken($main-color, 20%);
+  background-color: $main-color;
+}
