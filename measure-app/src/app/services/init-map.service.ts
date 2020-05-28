@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 
 import Map from 'ol/Map';
 import View from 'ol/View';
+import * as olProj from 'ol/proj';
 import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
 import { OSM, Vector as VectorSource } from 'ol/source';
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
@@ -50,5 +51,15 @@ export class InitMapService {
     });
 
     return [map, source];
+  }
+
+  public setCenterMap(map: Map, loc: string, zoom: number): void {
+    const arrLoc: Array<string> = loc.split(',').reverse();
+    map.setView(
+      new View({
+        center: olProj.fromLonLat(arrLoc),
+        zoom: zoom
+      })
+    );
   }
 }

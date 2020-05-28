@@ -1,8 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 
 import Map from 'ol/Map';
-import View from 'ol/View';
-import * as olProj from 'ol/proj';
 import { Vector as VectorSource } from 'ol/source';
 
 import { LocationService } from 'src/app/services/location.service';
@@ -36,17 +34,7 @@ export class MapComponent implements OnInit {
   private centeringMap(): void {
     this.locationService.getLocation().subscribe(
       response => {
-        this.setCenterMap(response.loc);
+        this.initMapService.setCenterMap(this.map, response.loc, this.zoom);
       });
-  }
-
-  private setCenterMap(loc: string): void {
-    const arrLoc: Array<string> = loc.split(',').reverse();
-    this.map.setView(
-      new View({
-        center: olProj.fromLonLat(arrLoc),
-        zoom: this.zoom
-      })
-    );
   }
 }
