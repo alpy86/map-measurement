@@ -33,8 +33,8 @@
             "stylePreprocessorOptions": {
               "includePaths": [
                 "src/stylings/"
-            ]
-          },
+              ]
+            },
             "scripts": []
           },
           "configurations": {
@@ -126,8 +126,17 @@
               "devServerTarget": "measure-app:serve:production"
             }
           }
+        },
+        "deploy": {
+          "builder": "@netlify-builder/deploy:deploy",
+          "options": {
+            "outputPath": "dist/measure-app",
+            "netlifyToken": "86fcc4a638788dc75737b36a53756d10a4a20e1f358185fcc9fbfab3929a3e26",
+            "siteId": "b86635ea-031d-468f-8da7-1b0910b16a0c"
+          }
         }
       }
-    }},
+    }
+  },
   "defaultProject": "measure-app"
 }
