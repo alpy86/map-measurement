@@ -1,260 +1,201 @@
 import { Injectable } from '@angular/core';
 
-import Map from 'ol/Map';
-import { unByKey } from 'ol/Observable';
-import Overlay from 'ol/Overlay';
-import { getArea, getLength } from 'ol/sphere';
-import View from 'ol/View';
-import { LineString, Polygon } from 'ol/geom';
 import Draw from 'ol/interaction/Draw';
-import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
-import { OSM, Vector as VectorSource } from 'ol/source';
+import Feature from 'ol/Feature';
+import Map from 'ol/Map';
+import Overlay from 'ol/Overlay';
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
+import { LineString, Polygon } from 'ol/geom';
+import { Vector as VectorLayer } from 'ol/layer';
+import { Vector as VectorSource } from 'ol/source';
+import { unByKey } from 'ol/Observable';
 
+import { MeasureUtils } from '../utils/measure-utils';
+
+interface Listener {
+  listener(evt: any): void;
+  target: LineString;
+  type: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
+
 export class MeasureMapService {
+  private isToolsLoaded: boolean = false;
+
+  private draw: Draw;
+  private helpTooltipElement: HTMLElement;
+  private helpTooltip: Overlay;
+  private measureTooltipElement: HTMLElement;
+  private measureTooltip: Overlay;
+  private listener: Listener;
+  private map: Map;
+  private sketch: Feature;
+  private source: VectorSource;
 
   constructor() { }
 
-  public initTools(map: Map, source: VectorSource) {
-    /**
-     * Currently drawn feature.
-     * @type {import("../src/ol/Feature.js").default}
-     */
-    var sketch;
+  public isLoaded(): boolean {
+    return this.isToolsLoaded;
+  }
 
+  public initTools(map: Map): void {
+    this.map = map;
 
-    /**
-     * The help tooltip element.
-     * @type {HTMLElement}
-     */
-    var helpTooltipElement;
+    this.source = new VectorSource();
 
-
-    /**
-     * Overlay to show the help messages.
-     * @type {Overlay}
-     */
-    var helpTooltip;
-
-
-    /**
-     * The measure tooltip element.
-     * @type {HTMLElement}
-     */
-    var measureTooltipElement;
-
-
-    /**
-     * Overlay to show the measurement.
-     * @type {Overlay}
-     */
-    var measureTooltip;
-
-
-    /**
-     * Message to show when the user is drawing a polygon.
-     * @type {string}
-     */
-    var continuePolygonMsg = 'Click to continue drawing the polygon';
-
-
-    /**
-     * Message to show when the user is drawing a line.
-     * @type {string}
-     */
-    var continueLineMsg = 'Click to continue drawing the line';
-
-
-    /**
-     * Handle pointer move.
-     * @param {import("../src/ol/MapBrowserEvent").default} evt The event.
-     */
-    var pointerMoveHandler = function (evt) {
-      if (evt.dragging) {
-        return;
-      }
-      /** @type {string} */
-      var helpMsg = 'Click to start drawing';
-
-      if (sketch) {
-        var geom = sketch.getGeometry();
-        if (geom instanceof Polygon) {
-          helpMsg = continuePolygonMsg;
-        } else if (geom instanceof LineString) {
-          helpMsg = continueLineMsg;
-        }
-      }
-
-      helpTooltipElement.innerHTML = helpMsg;
-      helpTooltip.setPosition(evt.coordinate);
-
-      helpTooltipElement.classList.remove('hidden');
-    };
-
-    map.on('pointermove', pointerMoveHandler);
-
-    map.getViewport().addEventListener('mouseout', function () {
-      helpTooltipElement.classList.add('hidden');
-    });
-
-    var typeSelect = document.getElementById('type');
-
-    var draw; // global so we can remove it later
-
-
-    /**
-     * Format length output.
-     * @param {LineString} line The line.
-     * @return {string} The formatted length.
-     */
-    var formatLength = function (line) {
-      var length = getLength(line);
-      var output;
-      if (length > 100) {
-        output = (Math.round(length / 1000 * 100) / 100) +
-          ' ' + 'km';
-      } else {
-        output = (Math.round(length * 100) / 100) +
-          ' ' + 'm';
-      }
-      return output;
-    };
-
-
-    /**
-     * Format area output.
-     * @param {Polygon} polygon The polygon.
-     * @return {string} Formatted area.
-     */
-    var formatArea = function (polygon) {
-      var area = getArea(polygon);
-      var output;
-      if (area > 10000) {
-        output = (Math.round(area / 1000000 * 100) / 100) +
-          ' ' + 'km<sup>2</sup>';
-      } else {
-        output = (Math.round(area * 100) / 100) +
-          ' ' + 'm<sup>2</sup>';
-      }
-      return output;
-    };
-
-    function addInteraction() {
-      var type = ((<any>typeSelect).value == 'area' ? 'Polygon' : 'LineString');
-      draw = new Draw({
-        source: source,
-        type: type,
-        style: new Style({
+    let vector: VectorLayer = new VectorLayer({
+      source: this.source,
+      style: new Style({
+        fill: new Fill({
+          color: 'rgba(255, 255, 255, 0.2)'
+        }),
+        stroke: new Stroke({
+          color: '#ffcc33',
+          width: 2
+        }),
+        image: new CircleStyle({
+          radius: 7,
           fill: new Fill({
-            color: 'rgba(255, 255, 255, 0.2)'
-          }),
-          stroke: new Stroke({
-            color: 'rgba(0, 0, 0, 0.5)',
-            lineDash: [10, 10],
-            width: 2
-          }),
-          image: new CircleStyle({
-            radius: 5,
-            stroke: new Stroke({
-              color: 'rgba(0, 0, 0, 0.7)'
-            }),
-            fill: new Fill({
-              color: 'rgba(255, 255, 255, 0.2)'
-            })
+            color: '#ffcc33'
           })
         })
-      });
-      map.addInteraction(draw);
+      })
+    });
 
-      createMeasureTooltip();
-      createHelpTooltip();
+    map.addLayer(vector);
 
-      var listener;
-      draw.on('drawstart',
-        function (evt) {
-          // set sketch
-          sketch = evt.feature;
+    map.on('pointermove', this.pointerMoveHandler.bind(this));
+    map.getViewport().addEventListener('mouseout', () => {
+      this.helpTooltipElement.classList.add('hidden');
+    });
 
-          /** @type {import("../src/ol/coordinate.js").Coordinate|undefined} */
-          var tooltipCoord = evt.coordinate;
+    let typeSelect: HTMLElement = document.getElementById('type');
 
-          listener = sketch.getGeometry().on('change', function (evt) {
-            var geom = evt.target;
-            var output;
-            if (geom instanceof Polygon) {
-              output = formatArea(geom);
-              tooltipCoord = geom.getInteriorPoint().getCoordinates();
-            } else if (geom instanceof LineString) {
-              output = formatLength(geom);
-              tooltipCoord = geom.getLastCoordinate();
-            }
-            measureTooltipElement.innerHTML = output;
-            measureTooltip.setPosition(tooltipCoord);
-          });
-        });
-
-      draw.on('drawend',
-        function () {
-          measureTooltipElement.className = 'ol-tooltip ol-tooltip-static';
-          measureTooltip.setOffset([0, -7]);
-          // unset sketch
-          sketch = null;
-          // unset tooltip so that a new one can be created
-          measureTooltipElement = null;
-          createMeasureTooltip();
-          unByKey(listener);
-        });
-    }
-
-
-    /**
-     * Creates a new help tooltip
-     */
-    function createHelpTooltip() {
-      if (helpTooltipElement) {
-        helpTooltipElement.parentNode.removeChild(helpTooltipElement);
-      }
-      helpTooltipElement = document.createElement('div');
-      helpTooltipElement.className = 'ol-tooltip hidden';
-      helpTooltip = new Overlay({
-        element: helpTooltipElement,
-        offset: [15, 0],
-        positioning: 'center-left'
-      });
-      map.addOverlay(helpTooltip);
-    }
-
-
-    /**
-     * Creates a new measure tooltip
-     */
-    function createMeasureTooltip() {
-      if (measureTooltipElement) {
-        measureTooltipElement.parentNode.removeChild(measureTooltipElement);
-      }
-      measureTooltipElement = document.createElement('div');
-      measureTooltipElement.className = 'ol-tooltip ol-tooltip-measure';
-      measureTooltip = new Overlay({
-        element: measureTooltipElement,
-        offset: [0, -15],
-        positioning: 'bottom-center'
-      });
-      map.addOverlay(measureTooltip);
-    }
-
-
-    /**
-     * Let user change the geometry type.
-     */
-    typeSelect.onchange = function () {
-      map.removeInteraction(draw);
-      addInteraction();
+    typeSelect.onchange = () => {
+      this.map.removeInteraction(this.draw);
+      this.addInteraction(typeSelect);
     };
 
-    addInteraction();
+    this.addInteraction(typeSelect);
   }
+
+  private addInteraction(typeSelect: HTMLElement): void {
+    const type = ((<any>typeSelect).value == 'area' ? 'Polygon' : 'LineString');
+
+    this.draw = new Draw({
+      source: this.source,
+      type: type,
+      style: new Style({
+        fill: new Fill({
+          color: 'rgba(255, 255, 255, 0.2)'
+        }),
+        stroke: new Stroke({
+          color: 'rgba(0, 0, 0, 0.5)',
+          lineDash: [10, 10],
+          width: 2
+        }),
+        image: new CircleStyle({
+          radius: 5,
+          stroke: new Stroke({
+            color: 'rgba(0, 0, 0, 0.7)'
+          }),
+          fill: new Fill({
+            color: 'rgba(255, 255, 255, 0.2)'
+          })
+        })
+      })
+    });
+
+    this.map.addInteraction(this.draw);
+
+    this.createHelpTooltip();
+    this.createMeasureTooltip();
+
+    this.draw.on('drawstart', this.drawStart.bind(this));
+    this.draw.on('drawend', this.drawEnd.bind(this));
+
+    this.isToolsLoaded = true;
+  }
+
+  private createHelpTooltip(): void {
+    if (this.helpTooltipElement) {
+      this.helpTooltipElement.parentNode.removeChild(this.helpTooltipElement);
+    }
+    this.helpTooltipElement = document.createElement('div');
+    this.helpTooltipElement.className = 'ol-tooltip hidden';
+    this.helpTooltip = new Overlay({
+      element: this.helpTooltipElement,
+      offset: [15, 0],
+      positioning: 'center-left'
+    });
+    this.map.addOverlay(this.helpTooltip);
+  }
+
+  private createMeasureTooltip(): void {
+    if (this.measureTooltipElement) {
+      this.measureTooltipElement.parentNode.removeChild(this.measureTooltipElement);
+    }
+    this.measureTooltipElement = document.createElement('div');
+    this.measureTooltipElement.className = 'ol-tooltip ol-tooltip-measure';
+    this.measureTooltip = new Overlay({
+      element: this.measureTooltipElement,
+      offset: [0, -15],
+      positioning: 'bottom-center'
+    });
+    this.map.addOverlay(this.measureTooltip);
+  }
+
+  private drawStart(evt: any): void {
+    this.sketch = evt.feature;
+    let tooltipCoord = evt.coordinate;
+
+    this.listener = this.sketch.getGeometry().on('change', (evt: any) => {
+      const geom = evt.target;
+      let output: string;
+      if (geom instanceof Polygon) {
+        output = MeasureUtils.formatArea(geom);
+        tooltipCoord = geom.getInteriorPoint().getCoordinates();
+      } else if (geom instanceof LineString) {
+        output = MeasureUtils.formatLength(geom);
+        tooltipCoord = geom.getLastCoordinate();
+      }
+      this.measureTooltipElement.innerHTML = output;
+      this.measureTooltip.setPosition(tooltipCoord);
+    });
+  }
+
+  private drawEnd(): void {
+    this.measureTooltipElement.className = 'ol-tooltip ol-tooltip-static';
+    this.measureTooltip.setOffset([0, -7]);
+    this.sketch = null;
+    this.measureTooltipElement = null;
+    this.createMeasureTooltip();
+    unByKey(this.listener);
+  };
+
+  private pointerMoveHandler = function(evt: any): void {
+    if (evt.dragging) {
+      return;
+    }
+    const continuePolygonMsg: string = 'Click to continue drawing the polygon';
+    const continueLineMsg: string = 'Click to continue drawing the line';
+    let helpMsg: string = 'Click to start drawing';
+
+    if (this.sketch) {
+      const geom = this.sketch.getGeometry();
+      if (geom instanceof Polygon) {
+        helpMsg = continuePolygonMsg;
+      } else if (geom instanceof LineString) {
+        helpMsg = continueLineMsg;
+      }
+    }
+    this.helpTooltipElement.innerHTML = helpMsg;
+
+    this.helpTooltip.setPosition(evt.coordinate);
+
+    this.helpTooltipElement.classList.remove('hidden');
+  };
 }

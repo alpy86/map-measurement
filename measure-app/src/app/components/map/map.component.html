@@ -1,4 +1,4 @@
-<form class="form-inline">
+<form class="form-inline" [hidden]="!isToolsLoaded">
   <label>Measurement type &nbsp;</label>
   <select id="type">
     <option value="length">Length (LineString)</option>

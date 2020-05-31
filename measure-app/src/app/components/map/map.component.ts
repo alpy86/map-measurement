@@ -12,29 +12,19 @@ import { MeasureMapService } from 'src/app/services/measure-map.service';
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.scss']
 })
-export class MapComponent implements OnInit {
 
+export class MapComponent implements OnInit {
+  public isToolsLoaded: boolean = false;
   private map: Map;
-  private sourceMap: VectorSource;
-  private baseLocation: Array<number> = [-11000000, 4600000];
-  private zoom: number = 12;
 
   constructor(
     private initMapService: InitMapService,
-    private locationService: LocationService,
     private measureMapService: MeasureMapService,
   ) { }
 
   public ngOnInit(): void {
-    [this.map, this.sourceMap] = this.initMapService.create(this.map, this.baseLocation, this.zoom);
-    this.measureMapService.initTools(this.map, this.sourceMap);
-    this.centeringMap();
-  }
-
-  private centeringMap(): void {
-    this.locationService.getLocation().subscribe(
-      response => {
-        this.initMapService.setCenterMap(this.map, response.loc, this.zoom);
-      });
+    this.map = this.initMapService.create();
+    this.measureMapService.initTools(this.map);
+    this.isToolsLoaded = this.measureMapService.isLoaded();
   }
 }
