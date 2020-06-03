@@ -1,8 +1,10 @@
 <form class="form-inline" [hidden]="!isToolsLoaded">
   <label>Measurement type &nbsp;</label>
-  <select id="type">
-    <option value="length">Length (LineString)</option>
-    <option value="area">Area (Polygon)</option>
+  <select id="type" (change)="onChange($event.target.value)">
+    <option value="LineString">Length (LineString)</option>
+    <option value="Polygon">Area (Polygon)</option>
+    <option value="">None</option>
   </select>
+  <button class="btn" type="button" (click)="clearMap()">Clear map</button>
 </form>
 <div class="map" id="map" #map></div>

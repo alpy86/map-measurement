@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import Draw from 'ol/interaction/Draw';
+import {Draw, Modify, Snap} from 'ol/interaction';
 import Feature from 'ol/Feature';
 import Map from 'ol/Map';
 import Overlay from 'ol/Overlay';
@@ -33,7 +33,9 @@ export class MeasureMapService {
   private listener: Listener;
   private map: Map;
   private sketch: Feature;
+  private snap: Snap;
   private source: VectorSource;
+  private valueType: string;
 
   constructor() { }
 
@@ -66,58 +68,74 @@ export class MeasureMapService {
     });
 
     map.addLayer(vector);
+    //add Modify
+    var modify = new Modify({source: this.source});
+    map.addInteraction(modify);
 
     map.on('pointermove', this.pointerMoveHandler.bind(this));
     map.getViewport().addEventListener('mouseout', () => {
       this.helpTooltipElement.classList.add('hidden');
     });
 
-    let typeSelect: HTMLElement = document.getElementById('type');
 
-    typeSelect.onchange = () => {
-      this.map.removeInteraction(this.draw);
-      this.addInteraction(typeSelect);
-    };
 
-    this.addInteraction(typeSelect);
+    const typeSelect: HTMLElement = document.getElementById('type');
+    this.addInteraction((<any>typeSelect).value);
+    this.isToolsLoaded = true;
   }
 
-  private addInteraction(typeSelect: HTMLElement): void {
-    const type = ((<any>typeSelect).value == 'area' ? 'Polygon' : 'LineString');
+  public changeType(eventTargetValue: string): void {
+    this.valueType = eventTargetValue;
+    this.map.removeInteraction(this.draw);
+    this.map.removeInteraction(this.snap);
+    this.map.removeOverlay(this.helpTooltip);
+    this.sketch = null;
+    this.addInteraction(this.valueType);
+  }
 
-    this.draw = new Draw({
-      source: this.source,
-      type: type,
-      style: new Style({
-        fill: new Fill({
-          color: 'rgba(255, 255, 255, 0.2)'
-        }),
-        stroke: new Stroke({
-          color: 'rgba(0, 0, 0, 0.5)',
-          lineDash: [10, 10],
-          width: 2
-        }),
-        image: new CircleStyle({
-          radius: 5,
-          stroke: new Stroke({
-            color: 'rgba(0, 0, 0, 0.7)'
-          }),
+  public clearAllMeasures(): void {
+    this.map.getOverlays().clear();
+    this.source.clear();
+    this.addInteraction(this.valueType);
+  }
+
+  private addInteraction(valueType: string): void {
+    if (valueType) {
+      this.draw = new Draw({
+        source: this.source,
+        type: valueType,
+        style: new Style({
           fill: new Fill({
-            color: 'rgba(255, 255, 255, 0.2)'
+            color: 'rgba(255, 255, 255, 0.3)'
+          }),
+          stroke: new Stroke({
+            color: 'rgba(0, 0, 0, 0.5)',
+            lineDash: [10, 10],
+            width: 2
+          }),
+          image: new CircleStyle({
+            radius: 5,
+            stroke: new Stroke({
+              color: 'rgba(0, 0, 0, 0.7)'
+            }),
+            fill: new Fill({
+              color: 'rgba(255, 255, 255, 0.2)'
+            })
           })
         })
-      })
-    });
+      });
 
-    this.map.addInteraction(this.draw);
+      this.map.addInteraction(this.draw);
+      //add Snap
+      this.snap = new Snap({source: this.source});
+      this.map.addInteraction(this.snap);
 
-    this.createHelpTooltip();
-    this.createMeasureTooltip();
+      this.createHelpTooltip();
+      this.createMeasureTooltip();
 
-    this.draw.on('drawstart', this.drawStart.bind(this));
-    this.draw.on('drawend', this.drawEnd.bind(this));
-
-    this.isToolsLoaded = true;
+      this.draw.on('drawstart', this.drawStart.bind(this));
+      this.draw.on('drawend', this.drawEnd.bind(this));
+    }
   }
 
   private createHelpTooltip(): void {
@@ -176,7 +194,7 @@ export class MeasureMapService {
     unByKey(this.listener);
   };
 
-  private pointerMoveHandler = function(evt: any): void {
+  private pointerMoveHandler = function (evt: any): void {
     if (evt.dragging) {
       return;
     }

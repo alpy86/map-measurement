@@ -14,6 +14,29 @@
     border: 2px solid darken($main-color, 20%);
     border-radius: 5px;
   }
+
+  .btn {
+    color: white;
+    margin: 10px;
+    padding: 10px;
+    font-size: 15px;
+    font-weight: bold;
+    background: $main-color;
+    border: none;
+    border-radius: 5px;
+    box-shadow: 0 -3px darken($main-color, 10%) inset;
+    outline: none;
+    transition: 0.2s;
+
+    &:hover {
+      background: darken($main-color, 10%);
+    }
+
+    &:active {
+      background: $main-color;
+      box-shadow: 0 3px $main-color inset;
+    }
+  }
 }
 
 .map {

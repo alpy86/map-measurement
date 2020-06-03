@@ -1,10 +1,5 @@
 import { getArea, getLength } from 'ol/sphere';
 import { LineString, Polygon } from 'ol/geom';
-import { Injectable } from '@angular/core';
-
-@Injectable({
-  providedIn: 'root'
-})
 
 export class MeasureUtils {
   public static formatLength(line: LineString): string {

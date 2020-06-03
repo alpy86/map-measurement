@@ -1,9 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 import Map from 'ol/Map';
-import { Vector as VectorSource } from 'ol/source';
 
-import { LocationService } from 'src/app/services/location.service';
 import { InitMapService } from 'src/app/services/init-map.service';
 import { MeasureMapService } from 'src/app/services/measure-map.service';
 
@@ -26,5 +24,13 @@ export class MapComponent implements OnInit {
     this.map = this.initMapService.create();
     this.measureMapService.initTools(this.map);
     this.isToolsLoaded = this.measureMapService.isLoaded();
+  }
+
+  public onChange(eventTargetValue: string): void{
+    this.measureMapService.changeType(eventTargetValue);
+  }
+
+  public clearMap(): void {
+    this.measureMapService.clearAllMeasures();
   }
 }
