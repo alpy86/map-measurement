@@ -80,7 +80,8 @@ export class MeasureMapService {
 
 
     const typeSelect: HTMLElement = document.getElementById('type');
-    this.addInteraction((<any>typeSelect).value);
+    this.valueType = (<any>typeSelect).value;
+    this.addInteraction(this.valueType);
     this.isToolsLoaded = true;
   }
 
@@ -94,6 +95,9 @@ export class MeasureMapService {
   }
 
   public clearAllMeasures(): void {
+    this.map.removeInteraction(this.draw);
+    this.map.removeInteraction(this.snap);
+    this.sketch = null;
     this.map.getOverlays().clear();
     this.source.clear();
     this.addInteraction(this.valueType);
@@ -168,6 +172,7 @@ export class MeasureMapService {
 
   private drawStart(evt: any): void {
     this.sketch = evt.feature;
+    console.log(this.sketch);
     let tooltipCoord = evt.coordinate;
 
     this.listener = this.sketch.getGeometry().on('change', (evt: any) => {
