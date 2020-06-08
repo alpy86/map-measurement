@@ -1,10 +1,13 @@
 @import "_variables";
 
 :host {
+
   width: 100%;
 }
 
 .header {
+  display: flex;
+  justify-content: space-between;
   padding: 1%;
   font-family: $font-family;
   font-size: 20px;
@@ -12,4 +15,26 @@
   color: white;
   border-bottom: 2px solid darken($main-color, 20%);
   background-color: $main-color;
+}
+
+.btn {
+  color: white;
+  padding: 10px;
+  font-size: 15px;
+  font-weight: bold;
+  background: $main-color;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0 -3px darken($main-color, 10%) inset;
+  outline: none;
+  transition: 0.2s;
+
+  &:hover {
+    background: darken($main-color, 10%);
+  }
+
+  &:active {
+    background: $main-color;
+    box-shadow: 0 3px $main-color inset;
+  }
 }

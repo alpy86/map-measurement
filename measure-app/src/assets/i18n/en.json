@@ -1,0 +1,17 @@
+{
+  "title": "Measurement map",
+  "choice tool": "Measurement type",
+  "tools": {
+    "line": "Length (LineString)",
+    "polygon": "Area (Polygon)",
+    "none": "None"
+  },
+  "drawing": {
+    "start": "Click to start drawingcvhghg",
+    "continue": {
+      "line": "Click to continue drawing the line",
+      "polygon": "Click to continue drawing the polygon"
+    }
+  },
+  "clear": "Clear map"
+}

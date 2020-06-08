@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import {Draw, Modify, Snap} from 'ol/interaction';
+import { Draw, Modify, Snap } from 'ol/interaction';
 import Feature from 'ol/Feature';
 import Map from 'ol/Map';
 import Overlay from 'ol/Overlay';
@@ -11,6 +11,7 @@ import { Vector as VectorSource } from 'ol/source';
 import { unByKey } from 'ol/Observable';
 
 import { MeasureUtils } from '../utils/measure-utils';
+import { TranslateService } from '@ngx-translate/core';
 
 interface Listener {
   listener(evt: any): void;
@@ -37,7 +38,7 @@ export class MeasureMapService {
   private source: VectorSource;
   private valueType: string;
 
-  constructor() { }
+  constructor(private translate: TranslateService) { }
 
   public isLoaded(): boolean {
     return this.isToolsLoaded;
@@ -69,7 +70,7 @@ export class MeasureMapService {
 
     map.addLayer(vector);
     //add Modify
-    var modify = new Modify({source: this.source});
+    var modify = new Modify({ source: this.source });
     map.addInteraction(modify);
 
     map.on('pointermove', this.pointerMoveHandler.bind(this));
@@ -131,7 +132,7 @@ export class MeasureMapService {
 
       this.map.addInteraction(this.draw);
       //add Snap
-      this.snap = new Snap({source: this.source});
+      this.snap = new Snap({ source: this.source });
       this.map.addInteraction(this.snap);
 
       this.createHelpTooltip();
@@ -203,16 +204,21 @@ export class MeasureMapService {
     if (evt.dragging) {
       return;
     }
-    const continuePolygonMsg: string = 'Click to continue drawing the polygon';
-    const continueLineMsg: string = 'Click to continue drawing the line';
-    let helpMsg: string = 'Click to start drawing';
+
+    let helpMsg: string = this.translate.instant('drawing.start');
 
     if (this.sketch) {
       const geom = this.sketch.getGeometry();
       if (geom instanceof Polygon) {
-        helpMsg = continuePolygonMsg;
+        this.translate.get('drawing.continue.polygon')
+          .subscribe(res => {
+            helpMsg = res;
+          });
       } else if (geom instanceof LineString) {
-        helpMsg = continueLineMsg;
+        this.translate.get('drawing.continue.line')
+          .subscribe(res => {
+            helpMsg = res;
+          });
       }
     }
     this.helpTooltipElement.innerHTML = helpMsg;

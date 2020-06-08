@@ -1,10 +1,10 @@
 <form class="form-inline" [hidden]="!isToolsLoaded">
-  <label>Measurement type &nbsp;</label>
+  <label class="label">{{"choice tool" | translate}}</label>
   <select id="type" (change)="onChange($event.target.value)">
-    <option value="LineString">Length (LineString)</option>
-    <option value="Polygon">Area (Polygon)</option>
-    <option value="">None</option>
+    <option value="LineString">{{"tools.line" | translate}}</option>
+    <option value="Polygon">{{"tools.polygon" | translate}}</option>
+    <option value="">{{"tools.none" | translate}}</option>
   </select>
-  <button class="btn" type="button" (click)="clearMap()">Clear map</button>
+  <button class="btn" type="button" (click)="clearMap()">{{"clear" | translate}}</button>
 </form>
 <div class="map" id="map" #map></div>
